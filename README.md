@@ -1,108 +1,58 @@
-# 📋 Buku Tamu Digital — Full Offline Setup
+# 📋 Buku Tamu Digital — PST BPS Kabupaten Buton Utara
 
-Ikuti langkah berikut SEKALI SAJA untuk menyiapkan semua file.
-Setelah itu aplikasi berjalan 100% offline tanpa internet.
+Aplikasi Buku Tamu Digital yang didesain khusus untuk Pelayanan Statistik Terpadu (PST) BPS Kabupaten Buton Utara. Berjalan 100% offline menggunakan SQLite (WASM) dan File System Access API.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-## STRUKTUR FOLDER (harus persis seperti ini)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## ✨ Fitur Unggulan
+- **Sistem Antrian Otomatis**: Generate nomor antrian harian yang otomatis reset setiap hari.
+- **Tiket Antrian Digital**: Tampilan nomor antrian setelah pendaftaran sukses dengan timer auto-reset 10 detik.
+- **Dashboard Admin Interaktif**: Panel pemantauan tamu dengan statistik kunjungan real-time.
+- **Manajemen Pelayanan**: Tombol toggle (switch) untuk menandai status pelayanan tamu (Menunggu/Selesai).
+- **Validasi Form**: Validasi format otomatis untuk nomor WhatsApp dan Email.
+- **Form Dinamis**: Opsi keperluan "Lainnya" yang memunculkan kolom input teks tambahan.
+- **Pencarian & Filter**: Cari data tamu berdasarkan nama, instansi, atau keperluan secara instan.
+- **Export CSV**: Unduh data tamu lengkap ke format Excel/CSV untuk pelaporan.
+- **Penyimpanan Lokal**: Data tersimpan aman di browser (localStorage) dan bisa disimpan ke file `.db` lokal.
 
-    buku-tamu/
-    ├── tamu.html
-    ├── admin.html
-    ├── README.txt
-    ├── libs/
-    │   ├── sql-wasm.js       ← unduh langkah 1
-    │   └── sql-wasm.wasm     ← unduh langkah 1
-    └── fonts/
-        ├── PlusJakartaSans-Regular.woff2     ← unduh langkah 2
-        ├── PlusJakartaSans-Medium.woff2
-        ├── PlusJakartaSans-SemiBold.woff2
-        ├── PlusJakartaSans-Bold.woff2
-        ├── PlusJakartaSans-ExtraBold.woff2
-        └── Fraunces-Bold.woff2               ← unduh langkah 2
+## 🚀 Persiapan Cepat
+Ikuti langkah berikut untuk menyiapkan environment:
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-## LANGKAH 1 — Unduh sql.js (2 file)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+### 1. Struktur Folder
+Pastikan struktur folder seperti ini:
+```text
+buku-tamu/
+├── tamu.html
+├── admin.html
+├── js/
+│   ├── logic_tamu.js
+│   ├── logic_admin.js
+│   └── db-manager.js
+├── css/
+│   ├── style_tamu.css
+│   └── style_admin.css
+├── libs/
+│   ├── sql-wasm.js
+│   └── sql-wasm.wasm
+└── fonts/
+    └── (Plus Jakarta Sans & Fraunces fonts)
+```
 
-Buka kedua URL berikut di browser, lalu "Save As" ke folder  libs/
+### 2. Cara Menjalankan
+Karena menggunakan SQLite WASM, aplikasi harus dijalankan melalui web server lokal (tidak bisa langsung klik file HTML):
 
-  File 1 — sql-wasm.js
-  https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js
-  → Simpan sebagai: libs/sql-wasm.js
+**Python 3:**
+```bash
+python -m http.server 8080
+```
+Buka di browser: `http://localhost:8080/tamu.html` (untuk tamu) atau `/admin.html` (untuk admin).
 
-  File 2 — sql-wasm.wasm
-  https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.wasm
-  → Simpan sebagai: libs/sql-wasm.wasm
+**VS Code:**
+Gunakan ekstensi **Live Server** lalu klik kanan pada `tamu.html` > *Open with Live Server*.
 
-  Atau gunakan terminal:
-    cd libs
-    curl -O https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js
-    curl -O https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.wasm
+## 🛠️ Teknologi
+- **Core**: HTML5, Vanilla CSS3, Modern JavaScript (ES6+).
+- **Database**: SQLite via `sql.js` (WASM).
+- **Storage**: Browser LocalStorage & File System Access API.
+- **Design**: Modern UI/UX dengan font Plus Jakarta Sans & Fraunces.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-## LANGKAH 2 — Unduh Font (6 file)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Buka setiap URL, klik kanan → "Save link as" ke folder  fonts/
-
-  Plus Jakarta Sans (font utama):
-  https://fonts.gstatic.com/s/plusjakartasans/v8/LDIbaomQNQcsA88c7O9yZ4KMCoOg4IA6-91aHEjcWuA_KU7NShXUEKi4Rw.woff2
-  → Simpan sebagai: fonts/PlusJakartaSans-Regular.woff2
-
-  https://fonts.gstatic.com/s/plusjakartasans/v8/LDIbaomQNQcsA88c7O9yZ4KMCoOg4IA6-91aHEjcWuA_pU7NShXUEKi4Rw.woff2
-  → Simpan sebagai: fonts/PlusJakartaSans-Medium.woff2
-
-  https://fonts.gstatic.com/s/plusjakartasans/v8/LDIbaomQNQcsA88c7O9yZ4KMCoOg4IA6-91aHEjcWuA_EU3NShXUEKi4Rw.woff2
-  → Simpan sebagai: fonts/PlusJakartaSans-SemiBold.woff2
-
-  https://fonts.gstatic.com/s/plusjakartasans/v8/LDIbaomQNQcsA88c7O9yZ4KMCoOg4IA6-91aHEjcWuA_ME3NShXUEKi4Rw.woff2
-  → Simpan sebagai: fonts/PlusJakartaSans-Bold.woff2
-
-  https://fonts.gstatic.com/s/plusjakartasans/v8/LDIbaomQNQcsA88c7O9yZ4KMCoOg4IA6-91aHEjcWuA_ak3NShXUEKi4Rw.woff2
-  → Simpan sebagai: fonts/PlusJakartaSans-ExtraBold.woff2
-
-  Fraunces (font judul dekoratif):
-  https://fonts.gstatic.com/s/fraunces/v31/6NUu8FyLNQOQZAnv9ZwNjucMHVn85Ni7emAe9lKqZTnDiw.woff2
-  → Simpan sebagai: fonts/Fraunces-Bold.woff2
-
-  Cara cepat via terminal (jalankan dari dalam folder  fonts/ ):
-    curl -L "https://fonts.gstatic.com/s/plusjakartasans/v8/LDIbaomQNQcsA88c7O9yZ4KMCoOg4IA6-91aHEjcWuA_KU7NShXUEKi4Rw.woff2" -o PlusJakartaSans-Regular.woff2
-    curl -L "https://fonts.gstatic.com/s/plusjakartasans/v8/LDIbaomQNQcsA88c7O9yZ4KMCoOg4IA6-91aHEjcWuA_pU7NShXUEKi4Rw.woff2" -o PlusJakartaSans-Medium.woff2
-    curl -L "https://fonts.gstatic.com/s/plusjakartasans/v8/LDIbaomQNQcsA88c7O9yZ4KMCoOg4IA6-91aHEjcWuA_EU3NShXUEKi4Rw.woff2" -o PlusJakartaSans-SemiBold.woff2
-    curl -L "https://fonts.gstatic.com/s/plusjakartasans/v8/LDIbaomQNQcsA88c7O9yZ4KMCoOg4IA6-91aHEjcWuA_ME3NShXUEKi4Rw.woff2" -o PlusJakartaSans-Bold.woff2
-    curl -L "https://fonts.gstatic.com/s/plusjakartasans/v8/LDIbaomQNQcsA88c7O9yZ4KMCoOg4IA6-91aHEjcWuA_ak3NShXUEKi4Rw.woff2" -o PlusJakartaSans-ExtraBold.woff2
-    curl -L "https://fonts.gstatic.com/s/fraunces/v31/6NUu8FyLNQOQZAnv9ZwNjucMHVn85Ni7emAe9lKqZTnDiw.woff2" -o Fraunces-Bold.woff2
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-## LANGKAH 3 — Jalankan
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-  ⚠️  Karena menggunakan file .wasm lokal, browser memerlukan
-      web server lokal (tidak bisa double-click langsung).
-
-  Pilih salah satu cara:
-
-  Python 3 (paling mudah):
-    cd buku-tamu
-    python -m http.server 8080
-    → Buka: http://localhost:8080/tamu.html
-    → Buka: http://localhost:8080/admin.html
-
-  Node.js:
-    cd buku-tamu
-    npx serve .
-
-  VS Code:
-    Install ekstensi "Live Server"
-    Klik kanan tamu.html → Open with Live Server
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-## CATATAN PENTING
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-  • Data tersimpan di file .db yang bisa diunduh via tombol 💾 Simpan .db
-  • Gunakan tombol 📂 Buka .db untuk memuat database yang sudah ada
-  • Data juga otomatis di-backup ke localStorage browser
-  • Klik 💾 Simpan .db secara berkala agar data tidak hilang
+---
+© 2026 BPS Kabupaten Buton Utara - PST Digital Team
