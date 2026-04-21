@@ -339,6 +339,16 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
+.opt {
+  font-size: 9px;
+  background: var(--g200);
+  color: var(--g600);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
 .ac {
   position: relative;
 }

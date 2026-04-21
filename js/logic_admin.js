@@ -63,6 +63,7 @@ async function initDB() {
   // Migration: add columns if they don't exist
   try { db.run("ALTER TABLE tamu ADD COLUMN no_antrian INTEGER DEFAULT 0"); } catch(e) {}
   try { db.run("ALTER TABLE tamu ADD COLUMN selesai INTEGER DEFAULT 0"); } catch(e) {}
+  try { db.run("ALTER TABLE tamu ADD COLUMN email TEXT DEFAULT ''"); } catch(e) {}
 
   clearInterval(_pt);
   fill.style.width = "100%";
@@ -182,6 +183,7 @@ async function doLoad() {
     // Migration after loading
     try { db.run("ALTER TABLE tamu ADD COLUMN no_antrian INTEGER DEFAULT 0"); } catch(e) {}
     try { db.run("ALTER TABLE tamu ADD COLUMN selesai INTEGER DEFAULT 0"); } catch(e) {}
+    try { db.run("ALTER TABLE tamu ADD COLUMN email TEXT DEFAULT ''"); } catch(e) {}
     persist();
     renderDash();
     renderTable();
@@ -333,7 +335,7 @@ function renderDash() {
   rb.innerHTML = recent
     .map(
       (r, i) =>
-        `<tr class="${r.selesai ? 'row-done' : ''}"><td class="td-num">${i + 1}</td><td>${antrianBadgeHTML(r.no_antrian)}</td><td><div class="td-n">${esc(r.nama)}</div><div class="td-i">${esc(r.instansi || "—")}</div></td><td>${r.keperluan.map((k) => `<span class="badge ${bc(k)}">${esc(k)}</span>`).join("")}</td><td><a class="wa-l" href="https://wa.me/${waNum(r.no_wa)}" target="_blank">${esc(r.no_wa)}</a></td><td class="td-t">${fmtDt(r.timestamp)}</td><td>${statusToggleHTML(r.id, r.selesai)}</td></tr>`,
+        `<tr class="${r.selesai ? 'row-done' : ''}"><td class="td-num">${i + 1}</td><td>${antrianBadgeHTML(r.no_antrian)}</td><td><div class="td-n">${esc(r.nama)}</div><div class="td-i">${esc(r.instansi || "—")}</div></td><td>${r.keperluan.map((k) => `<span class="badge ${bc(k)}">${esc(k)}</span>`).join("")}</td><td><a class="wa-l" href="https://wa.me/${waNum(r.no_wa)}" target="_blank">${esc(r.no_wa)}</a></td><td><span style="font-size:11px;color:var(--g600)">${esc(r.email || "—")}</span></td><td class="td-t">${fmtDt(r.timestamp)}</td><td>${statusToggleHTML(r.id, r.selesai)}</td></tr>`,
     )
     .join("");
 }
@@ -415,7 +417,7 @@ function renderTable() {
   tb.innerHTML = page
     .map(
       (r, i) =>
-        `<tr class="${r.selesai ? 'row-done' : ''}"><td class="td-num">${start + i + 1}</td><td>${antrianBadgeHTML(r.no_antrian)}</td><td><div class="td-n">${esc(r.nama)}</div><div class="td-i">${esc(r.instansi || "—")}</div></td><td class="td-j">${esc(r.jabatan || "—")}</td><td>${r.keperluan.map((k) => `<span class="badge ${bc(k)}">${esc(k)}</span>`).join("")}</td><td><a class="wa-l" href="https://wa.me/${waNum(r.no_wa)}" target="_blank">${esc(r.no_wa)}</a></td><td class="td-t">${fmtDt(r.timestamp)}</td><td>${statusToggleHTML(r.id, r.selesai)}</td><td><button class="del-btn" onclick="doDelete(${r.id})">🗑</button></td></tr>`,
+        `<tr class="${r.selesai ? 'row-done' : ''}"><td class="td-num">${start + i + 1}</td><td>${antrianBadgeHTML(r.no_antrian)}</td><td><div class="td-n">${esc(r.nama)}</div><div class="td-i">${esc(r.instansi || "—")}</div></td><td class="td-j">${esc(r.jabatan || "—")}</td><td>${r.keperluan.map((k) => `<span class="badge ${bc(k)}">${esc(k)}</span>`).join("")}</td><td><a class="wa-l" href="https://wa.me/${waNum(r.no_wa)}" target="_blank">${esc(r.no_wa)}</a></td><td><span style="font-size:11px;color:var(--g600)">${esc(r.email || "—")}</span></td><td class="td-t">${fmtDt(r.timestamp)}</td><td>${statusToggleHTML(r.id, r.selesai)}</td><td><button class="del-btn" onclick="doDelete(${r.id})">🗑</button></td></tr>`,
     )
     .join("");
   renderPager(total);
@@ -495,7 +497,7 @@ function exportCSV() {
     return;
   }
   const lines = [
-    ["No", "No. Antrian", "Nama", "Instansi", "Jabatan", "Keperluan", "No. WA", "Status", "Waktu"],
+    ["No", "No. Antrian", "Nama", "Instansi", "Jabatan", "Keperluan", "No. WA", "Email", "Status", "Waktu"],
     ...rows.map((r, i) => [
       i + 1,
       r.no_antrian || "",
@@ -504,6 +506,7 @@ function exportCSV() {
       r.jabatan || "",
       r.keperluan.join("; "),
       r.no_wa,
+      r.email || "",
       r.selesai ? "Selesai" : "Menunggu",
       r.timestamp,
     ]),

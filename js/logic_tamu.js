@@ -35,6 +35,7 @@ async function initDB() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       nama TEXT NOT NULL, instansi TEXT DEFAULT '',
       jabatan TEXT DEFAULT '', no_wa TEXT NOT NULL,
+      email TEXT DEFAULT '',
       keperluan TEXT NOT NULL,
       no_antrian INTEGER DEFAULT 0,
       selesai INTEGER DEFAULT 0,
@@ -42,9 +43,10 @@ async function initDB() {
     );
     CREATE INDEX IF NOT EXISTS idx_nama ON tamu(nama COLLATE NOCASE);
   `);
-  // Migration: add no_antrian and selesai columns if they don't exist
+  // Migration: add columns if they don't exist
   try { db.run("ALTER TABLE tamu ADD COLUMN no_antrian INTEGER DEFAULT 0"); } catch(e) {}
   try { db.run("ALTER TABLE tamu ADD COLUMN selesai INTEGER DEFAULT 0"); } catch(e) {}
+  try { db.run("ALTER TABLE tamu ADD COLUMN email TEXT DEFAULT ''"); } catch(e) {}
 
   clearInterval(_pt);
   fill.style.width = "100%";
@@ -179,6 +181,7 @@ function applySugg() {
   sf("fInst", _sugg.instansi, 1);
   sf("fJab", _sugg.jabatan, 1);
   sf("fWa", _sugg.no_wa, 1);
+  sf("fEmail", _sugg.email, 1);
   document.querySelectorAll(".kep").forEach((el) => {
     el.classList.remove("on");
     el.querySelector("input").checked = false;
@@ -241,16 +244,31 @@ let _countdownTimer = null;
 // Submit
 function submitForm() {
   const nama = document.getElementById("fNama").value.trim();
+  const inst = document.getElementById("fInst").value.trim();
+  const jab = document.getElementById("fJab").value.trim();
   const noWa = document.getElementById("fWa").value.trim();
+  const email = document.getElementById("fEmail").value.trim();
   const kep = getKep();
-  if (!nama) {
-    shake("fNama");
-    return;
-  }
-  if (!noWa) {
+
+  if (!nama) { shake("fNama"); return; }
+  if (!inst) { shake("fInst"); return; }
+  if (!jab) { shake("fJab"); return; }
+  
+  // Validation No WA
+  if (!noWa) { shake("fWa"); return; }
+  if (!/^08\d{8,13}$/.test(noWa)) {
     shake("fWa");
+    alert("Format No. WhatsApp tidak valid (contoh: 081234567890)");
     return;
   }
+
+  // Validation Email (Optional)
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    shake("fEmail");
+    alert("Format Email tidak valid");
+    return;
+  }
+
   if (!kep.length) {
     shakeEl(document.querySelector(".kep-list"));
     return;
@@ -268,12 +286,13 @@ function submitForm() {
     try {
       const queueNum = getNextQueueNumber();
       dbRun(
-        `INSERT INTO tamu(nama,instansi,jabatan,no_wa,keperluan,no_antrian) VALUES(?,?,?,?,?,?)`,
+        `INSERT INTO tamu(nama,instansi,jabatan,no_wa,email,keperluan,no_antrian) VALUES(?,?,?,?,?,?,?)`,
         [
           nama,
-          document.getElementById("fInst").value.trim(),
-          document.getElementById("fJab").value.trim(),
+          inst,
+          jab,
           noWa,
+          email,
           kep.join("|"),
           queueNum,
         ],
@@ -310,7 +329,7 @@ function startCountdown() {
 function resetForm() {
   clearInterval(_countdownTimer);
   document.getElementById("suc").classList.remove("show");
-  ["fNama", "fInst", "fJab", "fWa", "fLainnya"].forEach((id) => {
+  ["fNama", "fInst", "fJab", "fWa", "fEmail", "fLainnya"].forEach((id) => {
     const el = document.getElementById(id);
     el.value = "";
     el.classList.remove("filled", "err");
