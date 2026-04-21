@@ -3,7 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin — Buku Tamu Digital</title>
+    <title>Admin — Buku Tamu PST BPS Kab. Buton Utara</title>
+    <meta name="description" content="Panel admin buku tamu digital Pelayanan Statistik Terpadu BPS Kabupaten Buton Utara." />
     <link rel="stylesheet" href="css/style_admin.css" />
   </head>
   <body>
@@ -29,6 +30,10 @@
           <div class="nl">Menu</div>
           <button class="ni on" onclick="showSec('dash', this)">
             <span class="ico">📊</span><span>Dashboard</span>
+          </button>
+          <button class="ni" onclick="showSec('antrian', this)">
+            <span class="ico">🎫</span><span>Antrian Hari Ini</span
+            ><span class="nb nb-antrian" id="navAntrian">0</span>
           </button>
           <button class="ni" onclick="showSec('tamu', this)">
             <span class="ico">👥</span><span>Data Tamu</span
@@ -113,7 +118,7 @@
             <div><div class="sec-title">5 Kunjungan Terbaru</div></div>
             <button
               class="btn btn-s"
-              onclick="showSec('tamu', document.querySelectorAll('.ni')[1])"
+              onclick="showSec('tamu', document.querySelectorAll('.ni')[2])"
             >
               Lihat Semua →
             </button>
@@ -123,10 +128,12 @@
               <thead>
                 <tr>
                   <th>#</th>
+                  <th>Antrian</th>
                   <th>Nama &amp; Instansi</th>
                   <th>Keperluan</th>
                   <th>No. WA</th>
                   <th>Waktu</th>
+                  <th>Status</th>
                 </tr>
               </thead>
               <tbody id="recentBody"></tbody>
@@ -134,6 +141,38 @@
             <div class="empty" id="recentEmpty" style="display: none">
               <div class="ei">📭</div>
               <p>Belum ada data.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ANTRIAN HARI INI -->
+        <div id="sec-antrian" style="display: none">
+          <div class="topbar">
+            <div>
+              <div class="page-title">🎫 Antrian Hari Ini</div>
+              <div class="page-sub" id="antrianSub">—</div>
+            </div>
+            <div class="acts">
+              <button class="btn btn-s" onclick="refresh()">🔄 Refresh</button>
+            </div>
+          </div>
+          <div class="antrian-stats" id="antrianStats"></div>
+          <div class="tbl-card">
+            <table>
+              <thead>
+                <tr>
+                  <th>No. Antrian</th>
+                  <th>Nama</th>
+                  <th>Keperluan</th>
+                  <th>Waktu Daftar</th>
+                  <th>Status Pelayanan</th>
+                </tr>
+              </thead>
+              <tbody id="antrianBody"></tbody>
+            </table>
+            <div class="empty" id="antrianEmpty" style="display: none">
+              <div class="ei">🎫</div>
+              <p>Belum ada antrian hari ini.</p>
             </div>
           </div>
         </div>
@@ -168,11 +207,13 @@
               <thead>
                 <tr>
                   <th>#</th>
+                  <th>Antrian</th>
                   <th>Nama &amp; Instansi</th>
                   <th>Jabatan</th>
                   <th>Keperluan</th>
                   <th>No. WA</th>
                   <th>Waktu</th>
+                  <th>Status</th>
                   <th></th>
                 </tr>
               </thead>

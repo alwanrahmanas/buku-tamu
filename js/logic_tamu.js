@@ -36,10 +36,16 @@ async function initDB() {
       nama TEXT NOT NULL, instansi TEXT DEFAULT '',
       jabatan TEXT DEFAULT '', no_wa TEXT NOT NULL,
       keperluan TEXT NOT NULL,
+      no_antrian INTEGER DEFAULT 0,
+      selesai INTEGER DEFAULT 0,
       timestamp TEXT NOT NULL DEFAULT (datetime('now','localtime'))
     );
     CREATE INDEX IF NOT EXISTS idx_nama ON tamu(nama COLLATE NOCASE);
   `);
+  // Migration: add no_antrian and selesai columns if they don't exist
+  try { db.run("ALTER TABLE tamu ADD COLUMN no_antrian INTEGER DEFAULT 0"); } catch(e) {}
+  try { db.run("ALTER TABLE tamu ADD COLUMN selesai INTEGER DEFAULT 0"); } catch(e) {}
+
   clearInterval(_pt);
   fill.style.width = "100%";
   setTimeout(() => document.getElementById("boot").classList.add("gone"), 450);
@@ -86,6 +92,10 @@ function dbAll(sql, p = []) {
   return values.map((row) =>
     Object.fromEntries(columns.map((c, i) => [c, row[i]])),
   );
+}
+function dbS(sql, p = []) {
+  const r = db.exec(sql, p);
+  return r.length && r[0].values.length ? r[0].values[0][0] : 0;
 }
 
 // Autocomplete
@@ -192,11 +202,41 @@ function toggleKep(lbl) {
     0,
   );
 }
+function toggleLainnya() {
+  const checked = document.getElementById("kepLainnya").checked;
+  const field = document.getElementById("fieldLainnya");
+  field.style.display = checked ? "flex" : "none";
+  if (checked) {
+    document.getElementById("fLainnya").focus();
+  } else {
+    document.getElementById("fLainnya").value = "";
+  }
+}
 function getKep() {
-  return [...document.querySelectorAll("input[name=kep]:checked")].map(
+  const checked = [...document.querySelectorAll("input[name=kep]:checked")].map(
     (c) => c.value,
   );
+  // Replace "Lainnya" with the actual text
+  const lainnyaIdx = checked.indexOf("Lainnya");
+  if (lainnyaIdx !== -1) {
+    const lainnyaText = document.getElementById("fLainnya").value.trim();
+    if (lainnyaText) {
+      checked[lainnyaIdx] = lainnyaText;
+    } else {
+      checked.splice(lainnyaIdx, 1);
+    }
+  }
+  return checked;
 }
+
+// Get next queue number for today
+function getNextQueueNumber() {
+  const todayNum = dbS("SELECT MAX(no_antrian) FROM tamu WHERE date(timestamp)=date('now','localtime')");
+  return (todayNum || 0) + 1;
+}
+
+// Auto-reset countdown
+let _countdownTimer = null;
 
 // Submit
 function submitForm() {
@@ -215,24 +255,33 @@ function submitForm() {
     shakeEl(document.querySelector(".kep-list"));
     return;
   }
+  // Validate "Lainnya" textfield
+  if (document.getElementById("kepLainnya").checked && !document.getElementById("fLainnya").value.trim()) {
+    shake("fLainnya");
+    return;
+  }
   const btn = document.getElementById("btnDaftar");
   btn.disabled = true;
   document.getElementById("btnLabel").textContent = "Menyimpan…";
   document.getElementById("btnArr").className = "spin";
   setTimeout(() => {
     try {
+      const queueNum = getNextQueueNumber();
       dbRun(
-        `INSERT INTO tamu(nama,instansi,jabatan,no_wa,keperluan) VALUES(?,?,?,?,?)`,
+        `INSERT INTO tamu(nama,instansi,jabatan,no_wa,keperluan,no_antrian) VALUES(?,?,?,?,?,?)`,
         [
           nama,
           document.getElementById("fInst").value.trim(),
           document.getElementById("fJab").value.trim(),
           noWa,
           kep.join("|"),
+          queueNum,
         ],
       );
       document.getElementById("sucName").textContent = nama;
+      document.getElementById("qtNumber").textContent = queueNum;
       document.getElementById("suc").classList.add("show");
+      startCountdown();
     } catch (e) {
       alert("Error: " + e.message);
     } finally {
@@ -243,9 +292,25 @@ function submitForm() {
     }
   }, 500);
 }
+
+function startCountdown() {
+  let sec = 10;
+  document.getElementById("qtSec").textContent = sec;
+  clearInterval(_countdownTimer);
+  _countdownTimer = setInterval(() => {
+    sec--;
+    document.getElementById("qtSec").textContent = sec;
+    if (sec <= 0) {
+      clearInterval(_countdownTimer);
+      resetForm();
+    }
+  }, 1000);
+}
+
 function resetForm() {
+  clearInterval(_countdownTimer);
   document.getElementById("suc").classList.remove("show");
-  ["fNama", "fInst", "fJab", "fWa"].forEach((id) => {
+  ["fNama", "fInst", "fJab", "fWa", "fLainnya"].forEach((id) => {
     const el = document.getElementById(id);
     el.value = "";
     el.classList.remove("filled", "err");
@@ -254,6 +319,7 @@ function resetForm() {
     el.classList.remove("on");
     el.querySelector("input").checked = false;
   });
+  document.getElementById("fieldLainnya").style.display = "none";
   dismissSugg();
   closeDD();
   document.getElementById("fNama").focus();

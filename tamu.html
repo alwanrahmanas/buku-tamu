@@ -3,7 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Buku Tamu — Selamat Datang</title>
+    <title>Buku Tamu — Pelayanan Statistik Terpadu BPS Kab. Buton Utara</title>
+    <meta name="description" content="Buku tamu digital Pelayanan Statistik Terpadu BPS Kabupaten Buton Utara. Isi data diri dan keperluan kunjungan Anda." />
     <link rel="stylesheet" href="css/style_tamu.css" />
   </head>
   <body>
@@ -18,6 +19,7 @@
         <div class="hero-emblem">📋</div>
         <h1>Selamat Datang,<br /><em>Tamu Kami</em></h1>
         <div class="hero-line"></div>
+        <p class="hero-org">Pelayanan Statistik Terpadu<br /><strong>BPS Kabupaten Buton Utara</strong></p>
         <p>
           Mohon isi buku tamu terlebih dahulu sebelum melanjutkan kunjungan.<br />
           Terima kasih atas kehadiran Anda.
@@ -72,7 +74,7 @@
             </div>
           </div>
 
-          <div class="sec">Keperluan Kunjungan</div>
+          <div class="sec">Keperluan Kunjungan <span class="req">wajib</span></div>
           <div class="kep-list">
             <label class="kep" onclick="toggleKep(this)"
               ><input type="checkbox" name="kep" value="Perpustakaan" /><span
@@ -110,6 +112,23 @@
                 <div class="kep-desc">Pengajuan rekomendasi statistik</div>
               </div></label
             >
+            <label class="kep" onclick="toggleKep(this)"
+              ><input
+                type="checkbox"
+                name="kep"
+                value="Lainnya"
+                id="kepLainnya"
+                onchange="toggleLainnya()"
+              /><span class="kep-ico">✏️</span>
+              <div class="kep-info">
+                <div class="kep-name">Lainnya</div>
+                <div class="kep-desc">Keperluan lain yang tidak tercantum</div>
+              </div></label
+            >
+          </div>
+          <div class="field field-lainnya" id="fieldLainnya" style="display:none;margin-top:12px">
+            <div class="lbl">Keperluan Lainnya <span class="req">wajib</span></div>
+            <input type="text" id="fLainnya" placeholder="Tuliskan keperluan Anda…" />
           </div>
 
           <button class="btn-submit" id="btnDaftar" onclick="submitForm()">
@@ -121,15 +140,20 @@
           <div class="suc-ring">✓</div>
           <h2>Terima Kasih!</h2>
           <p>
-            Kunjungan <b id="sucName"></b> telah berhasil dicatat.<br />Selamat
-            berkunjung!
+            Kunjungan <b id="sucName"></b> telah berhasil dicatat.
           </p>
+          <div class="queue-ticket" id="queueTicket">
+            <div class="qt-label">Nomor Antrian Anda</div>
+            <div class="qt-number" id="qtNumber">—</div>
+            <div class="qt-hint">Silakan menunggu nomor antrian Anda dipanggil</div>
+          </div>
+          <div class="qt-countdown" id="qtCountdown">Kembali otomatis dalam <b id="qtSec">10</b> detik</div>
           <button class="btn-lagi" onclick="resetForm()">
             Tamu Berikutnya →
           </button>
         </div>
       </div>
-      <div class="footer">Buku Tamu Digital &nbsp;·&nbsp; SQLite Offline</div>
+      <div class="footer">Pelayanan Statistik Terpadu · BPS Kab. Buton Utara · Buku Tamu Digital</div>
     </div>
 
     <script src="libs/sql-wasm.js"></script>

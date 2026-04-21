@@ -54,16 +54,22 @@ async function initDB() {
       nama TEXT NOT NULL, instansi TEXT DEFAULT '',
       jabatan TEXT DEFAULT '', no_wa TEXT NOT NULL,
       keperluan TEXT NOT NULL,
+      no_antrian INTEGER DEFAULT 0,
+      selesai INTEGER DEFAULT 0,
       timestamp TEXT NOT NULL DEFAULT (datetime('now','localtime'))
     );
     CREATE INDEX IF NOT EXISTS idx_nama ON tamu(nama COLLATE NOCASE);
   `);
+  // Migration: add columns if they don't exist
+  try { db.run("ALTER TABLE tamu ADD COLUMN no_antrian INTEGER DEFAULT 0"); } catch(e) {}
+  try { db.run("ALTER TABLE tamu ADD COLUMN selesai INTEGER DEFAULT 0"); } catch(e) {}
 
   clearInterval(_pt);
   fill.style.width = "100%";
   setTimeout(() => document.getElementById("boot").classList.add("gone"), 450);
   renderDash();
   updateNavCnt();
+  updateAntrianBadge();
 }
 
 /* ── Persist ────────────────────────────────────────────────────────────────── */
@@ -173,9 +179,14 @@ async function doLoad() {
   }
   try {
     db = new SQL.Database(r.data);
+    // Migration after loading
+    try { db.run("ALTER TABLE tamu ADD COLUMN no_antrian INTEGER DEFAULT 0"); } catch(e) {}
+    try { db.run("ALTER TABLE tamu ADD COLUMN selesai INTEGER DEFAULT 0"); } catch(e) {}
     persist();
     renderDash();
     renderTable();
+    renderAntrian();
+    updateAntrianBadge();
     toast("📂", `Database "${r.filename}" berhasil dimuat.`);
   } catch (e) {
     toast("❌", "File .db tidak valid: " + e.message, 1);
@@ -193,13 +204,14 @@ function dbRunWithSave(sql, p = []) {
 
 /* ── Nav ───────────────────────────────────────────────────────────────────── */
 function showSec(sec, btn) {
-  ["dash", "tamu"].forEach(
+  ["dash", "antrian", "tamu"].forEach(
     (s) => (document.getElementById("sec-" + s).style.display = "none"),
   );
   document.getElementById("sec-" + sec).style.display = "block";
   document.querySelectorAll(".ni").forEach((b) => b.classList.remove("on"));
   if (btn) btn.classList.add("on");
   if (sec === "dash") renderDash();
+  if (sec === "antrian") renderAntrian();
   if (sec === "tamu") renderTable();
 }
 function updateNavCnt() {
@@ -207,11 +219,52 @@ function updateNavCnt() {
     "SELECT COUNT(*) FROM tamu",
   );
 }
+function updateAntrianBadge() {
+  const pending = dbS("SELECT COUNT(*) FROM tamu WHERE date(timestamp)=date('now','localtime') AND selesai=0");
+  const el = document.getElementById("navAntrian");
+  el.textContent = pending;
+  el.classList.toggle("pulse", pending > 0);
+}
 function refresh() {
-  document.getElementById("sec-tamu").style.display !== "none"
-    ? renderTable()
-    : renderDash();
+  const dashVis = document.getElementById("sec-dash").style.display !== "none";
+  const antrianVis = document.getElementById("sec-antrian").style.display !== "none";
+  if (dashVis) renderDash();
+  else if (antrianVis) renderAntrian();
+  else renderTable();
+  updateAntrianBadge();
   toast("🔄", "Data diperbarui.");
+}
+
+/* ── Toggle Selesai ─────────────────────────────────────────────────────────── */
+function toggleSelesai(id) {
+  const current = dbS("SELECT selesai FROM tamu WHERE id=?", [id]);
+  const newVal = current ? 0 : 1;
+  db.run("UPDATE tamu SET selesai=? WHERE id=?", [newVal, id]);
+  persist();
+  const st = DBManager.status();
+  if (st.active) autoSave();
+  // Re-render the active section
+  const dashVis = document.getElementById("sec-dash").style.display !== "none";
+  const antrianVis = document.getElementById("sec-antrian").style.display !== "none";
+  if (dashVis) renderDash();
+  if (antrianVis) renderAntrian();
+  if (document.getElementById("sec-tamu").style.display !== "none") renderTable();
+  updateAntrianBadge();
+  toast(newVal ? "✅" : "🔄", newVal ? "Pelayanan ditandai selesai." : "Status dikembalikan ke menunggu.");
+}
+
+/* ── Status Toggle HTML ────────────────────────────────────────────────────── */
+function statusToggleHTML(id, selesai) {
+  return `<label class="toggle-wrap" title="${selesai ? 'Selesai' : 'Menunggu'}">
+    <input type="checkbox" class="toggle-input" ${selesai ? 'checked' : ''} onchange="toggleSelesai(${id})">
+    <span class="toggle-slider"></span>
+    <span class="toggle-label ${selesai ? 'tl-done' : 'tl-wait'}">${selesai ? 'Selesai' : 'Menunggu'}</span>
+  </label>`;
+}
+
+function antrianBadgeHTML(no_antrian) {
+  if (!no_antrian) return '<span class="antrian-na">—</span>';
+  return `<span class="antrian-badge">${no_antrian}</span>`;
 }
 
 /* ── Dashboard ──────────────────────────────────────────────────────────────── */
@@ -220,18 +273,25 @@ function renderDash() {
   const today = dbS(
     "SELECT COUNT(*) FROM tamu WHERE date(timestamp)=date('now','localtime')",
   );
+  const pending = dbS(
+    "SELECT COUNT(*) FROM tamu WHERE date(timestamp)=date('now','localtime') AND selesai=0",
+  );
+  const done = dbS(
+    "SELECT COUNT(*) FROM tamu WHERE date(timestamp)=date('now','localtime') AND selesai=1",
+  );
   const unique = dbS("SELECT COUNT(DISTINCT LOWER(nama)) FROM tamu");
   const inst = dbS(
     "SELECT COUNT(DISTINCT LOWER(instansi)) FROM tamu WHERE instansi!=''",
   );
   document.getElementById("dashSub").textContent =
-    `${total} total kunjungan · ${new Date().toLocaleTimeString("id-ID")}`;
+    `${total} total kunjungan · ${today} hari ini · ${new Date().toLocaleTimeString("id-ID")}`;
   document.getElementById("navCnt").textContent = total;
+  updateAntrianBadge();
   document.getElementById("statsRow").innerHTML = `
     <div class="stat"><div class="stat-n">${total}</div><div class="stat-l">Total Kunjungan</div><div class="stat-ico">📋</div></div>
     <div class="stat"><div class="stat-n">${today}</div><div class="stat-l">Kunjungan Hari Ini</div><div class="stat-ico">📅</div></div>
-    <div class="stat"><div class="stat-n">${unique}</div><div class="stat-l">Tamu Unik</div><div class="stat-ico">👤</div></div>
-    <div class="stat"><div class="stat-n">${inst}</div><div class="stat-l">Instansi</div><div class="stat-ico">🏢</div></div>`;
+    <div class="stat"><div class="stat-n">${pending}</div><div class="stat-l">Menunggu Dilayani</div><div class="stat-ico">⏳</div></div>
+    <div class="stat"><div class="stat-n">${done}</div><div class="stat-l">Selesai Hari Ini</div><div class="stat-ico">✅</div></div>`;
   const kc = {};
   dbAll("SELECT keperluan,COUNT(*) cnt FROM tamu GROUP BY keperluan").forEach(
     (r) =>
@@ -273,7 +333,46 @@ function renderDash() {
   rb.innerHTML = recent
     .map(
       (r, i) =>
-        `<tr><td class="td-num">${i + 1}</td><td><div class="td-n">${esc(r.nama)}</div><div class="td-i">${esc(r.instansi || "—")}</div></td><td>${r.keperluan.map((k) => `<span class="badge ${bc(k)}">${esc(k)}</span>`).join("")}</td><td><a class="wa-l" href="https://wa.me/${waNum(r.no_wa)}" target="_blank">${esc(r.no_wa)}</a></td><td class="td-t">${fmtDt(r.timestamp)}</td></tr>`,
+        `<tr class="${r.selesai ? 'row-done' : ''}"><td class="td-num">${i + 1}</td><td>${antrianBadgeHTML(r.no_antrian)}</td><td><div class="td-n">${esc(r.nama)}</div><div class="td-i">${esc(r.instansi || "—")}</div></td><td>${r.keperluan.map((k) => `<span class="badge ${bc(k)}">${esc(k)}</span>`).join("")}</td><td><a class="wa-l" href="https://wa.me/${waNum(r.no_wa)}" target="_blank">${esc(r.no_wa)}</a></td><td class="td-t">${fmtDt(r.timestamp)}</td><td>${statusToggleHTML(r.id, r.selesai)}</td></tr>`,
+    )
+    .join("");
+}
+
+/* ── Antrian Hari Ini ──────────────────────────────────────────────────────── */
+function renderAntrian() {
+  const rows = dbAll(
+    "SELECT * FROM tamu WHERE date(timestamp)=date('now','localtime') ORDER BY no_antrian ASC",
+  ).map(parseKep);
+  const pending = rows.filter(r => !r.selesai).length;
+  const done = rows.filter(r => r.selesai).length;
+  document.getElementById("antrianSub").textContent =
+    `${rows.length} tamu hari ini · ${pending} menunggu · ${done} selesai`;
+  updateAntrianBadge();
+
+  document.getElementById("antrianStats").innerHTML = `
+    <div class="a-stat a-stat-wait"><div class="a-stat-n">${pending}</div><div class="a-stat-l">⏳ Menunggu</div></div>
+    <div class="a-stat a-stat-done"><div class="a-stat-n">${done}</div><div class="a-stat-l">✅ Selesai</div></div>
+    <div class="a-stat a-stat-total"><div class="a-stat-n">${rows.length}</div><div class="a-stat-l">🎫 Total Antrian</div></div>
+  `;
+
+  const te = document.getElementById("antrianEmpty"),
+    tb = document.getElementById("antrianBody");
+  if (!rows.length) {
+    tb.innerHTML = "";
+    te.style.display = "block";
+    return;
+  }
+  te.style.display = "none";
+  tb.innerHTML = rows
+    .map(
+      (r) =>
+        `<tr class="${r.selesai ? 'row-done' : ''}">
+          <td>${antrianBadgeHTML(r.no_antrian)}</td>
+          <td><div class="td-n">${esc(r.nama)}</div><div class="td-i">${esc(r.instansi || "—")}</div></td>
+          <td>${r.keperluan.map((k) => `<span class="badge ${bc(k)}">${esc(k)}</span>`).join("")}</td>
+          <td class="td-t">${fmtTime(r.timestamp)}</td>
+          <td>${statusToggleHTML(r.id, r.selesai)}</td>
+        </tr>`,
     )
     .join("");
 }
@@ -300,6 +399,7 @@ function renderTable() {
   document.getElementById("tamuSub").textContent =
     `${rows.length} data kunjungan`;
   updateNavCnt();
+  updateAntrianBadge();
   const total = rows.length,
     start = (_pg - 1) * PAGE,
     page = rows.slice(start, start + PAGE).map(parseKep);
@@ -315,7 +415,7 @@ function renderTable() {
   tb.innerHTML = page
     .map(
       (r, i) =>
-        `<tr><td class="td-num">${start + i + 1}</td><td><div class="td-n">${esc(r.nama)}</div><div class="td-i">${esc(r.instansi || "—")}</div></td><td class="td-j">${esc(r.jabatan || "—")}</td><td>${r.keperluan.map((k) => `<span class="badge ${bc(k)}">${esc(k)}</span>`).join("")}</td><td><a class="wa-l" href="https://wa.me/${waNum(r.no_wa)}" target="_blank">${esc(r.no_wa)}</a></td><td class="td-t">${fmtDt(r.timestamp)}</td><td><button class="del-btn" onclick="doDelete(${r.id})">🗑</button></td></tr>`,
+        `<tr class="${r.selesai ? 'row-done' : ''}"><td class="td-num">${start + i + 1}</td><td>${antrianBadgeHTML(r.no_antrian)}</td><td><div class="td-n">${esc(r.nama)}</div><div class="td-i">${esc(r.instansi || "—")}</div></td><td class="td-j">${esc(r.jabatan || "—")}</td><td>${r.keperluan.map((k) => `<span class="badge ${bc(k)}">${esc(k)}</span>`).join("")}</td><td><a class="wa-l" href="https://wa.me/${waNum(r.no_wa)}" target="_blank">${esc(r.no_wa)}</a></td><td class="td-t">${fmtDt(r.timestamp)}</td><td>${statusToggleHTML(r.id, r.selesai)}</td><td><button class="del-btn" onclick="doDelete(${r.id})">🗑</button></td></tr>`,
     )
     .join("");
   renderPager(total);
@@ -358,6 +458,7 @@ function doDelete(id) {
     closeMdl();
     renderTable();
     renderDash();
+    updateAntrianBadge();
     toast("🗑", "Data berhasil dihapus.");
   };
 }
@@ -375,6 +476,8 @@ function clearAll() {
     closeMdl2();
     renderTable();
     renderDash();
+    renderAntrian();
+    updateAntrianBadge();
     toast("🗑", "Semua data berhasil dihapus.");
   };
 }
@@ -392,14 +495,16 @@ function exportCSV() {
     return;
   }
   const lines = [
-    ["No", "Nama", "Instansi", "Jabatan", "Keperluan", "No. WA", "Waktu"],
+    ["No", "No. Antrian", "Nama", "Instansi", "Jabatan", "Keperluan", "No. WA", "Status", "Waktu"],
     ...rows.map((r, i) => [
       i + 1,
+      r.no_antrian || "",
       r.nama,
       r.instansi || "",
       r.jabatan || "",
       r.keperluan.join("; "),
       r.no_wa,
+      r.selesai ? "Selesai" : "Menunggu",
       r.timestamp,
     ]),
   ].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","));
@@ -421,11 +526,10 @@ function esc(s) {
     .replace(/>/g, "&gt;");
 }
 function bc(k) {
-  return k === "Perpustakaan"
-    ? "bp"
-    : k === "Konsultasi Statistik"
-      ? "bk"
-      : "br";
+  if (k === "Perpustakaan") return "bp";
+  if (k === "Konsultasi Statistik") return "bk";
+  if (k === "Rekomendasi Statistik") return "br";
+  return "bo"; // Other/Lainnya
 }
 function waNum(n) {
   return (n || "").replace(/\D/g, "").replace(/^0/, "62");
@@ -443,6 +547,11 @@ function fmtDt(dt) {
     d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })
   );
 }
+function fmtTime(dt) {
+  if (!dt) return "—";
+  const d = new Date(dt.includes("T") ? dt : dt.replace(" ", "T"));
+  return d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+}
 let _tt;
 function toast(ico, msg, err = 0) {
   clearTimeout(_tt);
@@ -455,7 +564,7 @@ function toast(ico, msg, err = 0) {
   _tt = setTimeout(() => t.classList.remove("show"), 4000);
 }
 
-// Auto-refresh data dari tab tamu setiap 15 detik
+// Auto-refresh data dari tab tamu setiap 10 detik (faster polling)
 setInterval(() => {
   const saved = localStorage.getItem(STORE_KEY);
   if (!saved) return;
@@ -466,8 +575,11 @@ setInterval(() => {
   }
   if (document.getElementById("sec-dash").style.display !== "none")
     renderDash();
+  if (document.getElementById("sec-antrian").style.display !== "none")
+    renderAntrian();
   updateNavCnt();
-}, 15000);
+  updateAntrianBadge();
+}, 10000);
 
 initDB().catch((e) => {
   clearInterval(_pt);
