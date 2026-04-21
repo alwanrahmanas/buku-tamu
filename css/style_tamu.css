@@ -386,7 +386,8 @@ body {
   margin-top: 2px;
 }
 input[type="text"],
-input[type="tel"] {
+input[type="tel"],
+input[type="email"] {
   width: 100%;
   padding: 12px 14px;
   border: 1.5px solid var(--g200);
