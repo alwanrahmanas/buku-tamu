@@ -43,7 +43,7 @@ async function initDB() {
     );
     CREATE INDEX IF NOT EXISTS idx_nama ON tamu(nama COLLATE NOCASE);
   `);
-  // Migration: add columns if they don't exist
+  // Migration: add no_antrian, selesai, and email columns if they don't exist
   try { db.run("ALTER TABLE tamu ADD COLUMN no_antrian INTEGER DEFAULT 0"); } catch(e) {}
   try { db.run("ALTER TABLE tamu ADD COLUMN selesai INTEGER DEFAULT 0"); } catch(e) {}
   try { db.run("ALTER TABLE tamu ADD COLUMN email TEXT DEFAULT ''"); } catch(e) {}
@@ -250,29 +250,23 @@ function submitForm() {
   const email = document.getElementById("fEmail").value.trim();
   const kep = getKep();
 
-  if (!nama) { shake("fNama"); return; }
-  if (!inst) { shake("fInst"); return; }
-  if (!jab) { shake("fJab"); return; }
+  let valid = true;
+  if (!nama) { shake("fNama"); valid = false; }
+  if (!inst) { shake("fInst"); valid = false; }
+  if (!jab) { shake("fJab"); valid = false; }
   
-  // Validation No WA
-  if (!noWa) { shake("fWa"); return; }
-  if (!/^08\d{8,13}$/.test(noWa)) {
-    shake("fWa");
-    alert("Format No. WhatsApp tidak valid (contoh: 081234567890)");
-    return;
-  }
+  // Validasi No HP (angka, spasi, +, -, minimal 9 digit)
+  const waRegex = /^[0-9+\-\s]{9,18}$/;
+  if (!noWa || !waRegex.test(noWa)) { shake("fWa"); valid = false; }
+  
+  // Validasi Email (opsional, tapi jika diisi harus valid)
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (email && !emailRegex.test(email)) { shake("fEmail"); valid = false; }
 
-  // Validation Email (Optional)
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    shake("fEmail");
-    alert("Format Email tidak valid");
-    return;
-  }
+  if (!kep.length) { shakeEl(document.querySelector(".kep-list")); valid = false; }
+  
+  if (!valid) return;
 
-  if (!kep.length) {
-    shakeEl(document.querySelector(".kep-list"));
-    return;
-  }
   // Validate "Lainnya" textfield
   if (document.getElementById("kepLainnya").checked && !document.getElementById("fLainnya").value.trim()) {
     shake("fLainnya");
