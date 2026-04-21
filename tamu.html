@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Buku Tamu — Selamat Datang</title>
+    <link rel="stylesheet" href="css/style_tamu.css" />
+  </head>
+  <body>
+    <div id="boot">
+      <div class="boot-logo">Buku <span>Tamu</span></div>
+      <div class="boot-bar"><div class="boot-fill" id="bootFill"></div></div>
+      <div class="boot-sub" id="bootSub">Memuat SQLite…</div>
+    </div>
+
+    <div class="page">
+      <div class="hero">
+        <div class="hero-emblem">📋</div>
+        <h1>Selamat Datang,<br /><em>Tamu Kami</em></h1>
+        <div class="hero-line"></div>
+        <p>
+          Mohon isi buku tamu terlebih dahulu sebelum melanjutkan kunjungan.<br />
+          Terima kasih atas kehadiran Anda.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-stripe"></div>
+        <div class="card-body">
+          <div class="sugg" id="suggBanner">
+            <div class="sugg-ico">✨</div>
+            <div class="sugg-txt">
+              <b id="suggName"></b>
+              <span id="suggDetail"></span>
+            </div>
+            <div class="sugg-acts">
+              <button class="btn-ya" onclick="applySugg()">Isi otomatis</button>
+              <button class="btn-tdk" onclick="dismissSugg()">Tidak</button>
+            </div>
+          </div>
+
+          <div class="sec">Data Diri</div>
+          <div class="fields">
+            <div class="field">
+              <div class="lbl">Nama Lengkap <span class="req">wajib</span></div>
+              <div class="ac">
+                <input
+                  type="text"
+                  id="fNama"
+                  placeholder="Masukkan nama lengkap Anda…"
+                  autocomplete="off"
+                  oninput="onNama(this.value)"
+                  onblur="schedHide()"
+                  onkeydown="onKey(event)"
+                />
+                <div class="dd" id="dd"></div>
+              </div>
+            </div>
+            <div class="row2">
+              <div class="field">
+                <div class="lbl">Instansi / Asal</div>
+                <input type="text" id="fInst" placeholder="Nama instansi…" />
+              </div>
+              <div class="field">
+                <div class="lbl">Jabatan</div>
+                <input type="text" id="fJab" placeholder="Jabatan Anda…" />
+              </div>
+            </div>
+            <div class="field">
+              <div class="lbl">No. WhatsApp <span class="req">wajib</span></div>
+              <input type="tel" id="fWa" placeholder="08xxxxxxxxxx" />
+            </div>
+          </div>
+
+          <div class="sec">Keperluan Kunjungan</div>
+          <div class="kep-list">
+            <label class="kep" onclick="toggleKep(this)"
+              ><input type="checkbox" name="kep" value="Perpustakaan" /><span
+                class="kep-ico"
+                >📚</span
+              >
+              <div class="kep-info">
+                <div class="kep-name">Perpustakaan</div>
+                <div class="kep-desc">
+                  Akses koleksi publikasi cetak dan digital
+                </div>
+              </div></label
+            >
+            <label class="kep" onclick="toggleKep(this)"
+              ><input
+                type="checkbox"
+                name="kep"
+                value="Konsultasi Statistik"
+              /><span class="kep-ico">📈</span>
+              <div class="kep-info">
+                <div class="kep-name">Konsultasi Statistik</div>
+                <div class="kep-desc">
+                  Permintaan data dan konsultasi data statistik
+                </div>
+              </div></label
+            >
+            <label class="kep" onclick="toggleKep(this)"
+              ><input
+                type="checkbox"
+                name="kep"
+                value="Rekomendasi Statistik"
+              /><span class="kep-ico">🏅</span>
+              <div class="kep-info">
+                <div class="kep-name">Rekomendasi Statistik</div>
+                <div class="kep-desc">Pengajuan rekomendasi statistik</div>
+              </div></label
+            >
+          </div>
+
+          <button class="btn-submit" id="btnDaftar" onclick="submitForm()">
+            <span id="btnLabel">Daftar Kunjungan</span>
+            <span class="arr" id="btnArr">→</span>
+          </button>
+        </div>
+        <div class="suc" id="suc">
+          <div class="suc-ring">✓</div>
+          <h2>Terima Kasih!</h2>
+          <p>
+            Kunjungan <b id="sucName"></b> telah berhasil dicatat.<br />Selamat
+            berkunjung!
+          </p>
+          <button class="btn-lagi" onclick="resetForm()">
+            Tamu Berikutnya →
+          </button>
+        </div>
+      </div>
+      <div class="footer">Buku Tamu Digital &nbsp;·&nbsp; SQLite Offline</div>
+    </div>
+
+    <script src="libs/sql-wasm.js"></script>
+    <script src="js/db-manager.js"></script>
+    <script src="js/logic_tamu.js"></script>
+  </body>
+</html>

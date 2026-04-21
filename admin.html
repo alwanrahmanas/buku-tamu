@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin — Buku Tamu Digital</title>
+    <link rel="stylesheet" href="css/style_admin.css" />
+  </head>
+  <body>
+    <div id="boot">
+      <div class="b-logo">Buku <span>Tamu</span> Admin</div>
+      <div class="b-bar"><div class="b-fill" id="bootFill"></div></div>
+      <div class="b-sub" id="bootSub">Memuat SQLite…</div>
+    </div>
+
+    <div class="layout">
+      <aside>
+        <div class="ah">
+          <div class="brand">
+            <div class="brand-ico">📋</div>
+            <div class="brand-name">Buku Tamu<br />Digital</div>
+          </div>
+          <div class="brand-sub">Panel Administrator</div>
+          <div class="brand-badge">
+            <span class="dot"></span><span>SQLite — Offline</span>
+          </div>
+        </div>
+        <nav>
+          <div class="nl">Menu</div>
+          <button class="ni on" onclick="showSec('dash', this)">
+            <span class="ico">📊</span><span>Dashboard</span>
+          </button>
+          <button class="ni" onclick="showSec('tamu', this)">
+            <span class="ico">👥</span><span>Data Tamu</span
+            ><span class="nb" id="navCnt">0</span>
+          </button>
+          <div class="nl">Database</div>
+          <button class="ni" onclick="doSave()">
+            <span class="ico">💾</span><span>Simpan .db</span>
+          </button>
+          <button class="ni" onclick="doLoad()">
+            <span class="ico">📂</span><span>Buka .db</span>
+          </button>
+          <button class="ni" onclick="exportCSV()">
+            <span class="ico">⬇</span><span>Export CSV</span>
+          </button>
+          <button class="ni" onclick="clearAll()">
+            <span class="ico">🗑</span><span>Hapus Semua</span>
+          </button>
+        </nav>
+        <div class="af">
+          <a class="guest-btn" href="tamu.html" target="_blank"
+            ><span>🔗</span><span>Halaman Tamu</span></a
+          >
+        </div>
+      </aside>
+
+      <main class="main">
+        <!-- FOLDER STATUS BAR -->
+        <div class="folder-bar inactive" id="folderBar">
+          <span class="fb-ico">📁</span>
+          <div class="fb-txt">
+            <b id="fbTitle">Folder penyimpanan belum dipilih</b>
+            <span id="fbDesc"
+              >Pilih folder db/ agar file .db tersimpan otomatis di sana setiap
+              kali disimpan.</span
+            >
+          </div>
+          <div class="fb-acts">
+            <button class="fb-btn set" id="fbSetBtn" onclick="setFolder()">
+              Pilih Folder db/
+            </button>
+            <button
+              class="fb-btn clr"
+              id="fbClrBtn"
+              onclick="unsetFolder()"
+              style="display: none"
+            >
+              ✕ Lepas
+            </button>
+          </div>
+        </div>
+
+        <!-- DASHBOARD -->
+        <div id="sec-dash">
+          <div class="topbar">
+            <div>
+              <div class="page-title">Dashboard</div>
+              <div class="page-sub" id="dashSub">—</div>
+            </div>
+            <div class="acts">
+              <button class="btn btn-s" onclick="refresh()">🔄 Refresh</button>
+              <button class="btn btn-s" onclick="doSave()">
+                💾 Simpan .db
+              </button>
+              <button class="btn btn-p" onclick="exportCSV()">
+                ⬇ Export CSV
+              </button>
+            </div>
+          </div>
+          <div class="stats" id="statsRow"></div>
+          <div class="charts">
+            <div class="chart-card">
+              <div class="ct">📊 Keperluan Terbanyak</div>
+              <div class="bars" id="chartKep"></div>
+            </div>
+            <div class="chart-card">
+              <div class="ct">🏢 Instansi Terbanyak</div>
+              <div class="bars" id="chartInst"></div>
+            </div>
+          </div>
+          <div class="tbl-head">
+            <div><div class="sec-title">5 Kunjungan Terbaru</div></div>
+            <button
+              class="btn btn-s"
+              onclick="showSec('tamu', document.querySelectorAll('.ni')[1])"
+            >
+              Lihat Semua →
+            </button>
+          </div>
+          <div class="tbl-card">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Nama &amp; Instansi</th>
+                  <th>Keperluan</th>
+                  <th>No. WA</th>
+                  <th>Waktu</th>
+                </tr>
+              </thead>
+              <tbody id="recentBody"></tbody>
+            </table>
+            <div class="empty" id="recentEmpty" style="display: none">
+              <div class="ei">📭</div>
+              <p>Belum ada data.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- DATA TAMU -->
+        <div id="sec-tamu" style="display: none">
+          <div class="topbar">
+            <div>
+              <div class="page-title">Data Tamu</div>
+              <div class="page-sub" id="tamuSub">—</div>
+            </div>
+            <div class="acts">
+              <button class="btn btn-s" onclick="doLoad()">📂 Buka .db</button>
+              <button class="btn btn-s" onclick="doSave()">
+                💾 Simpan .db
+              </button>
+              <button class="btn btn-d" onclick="exportCSV()">⬇ CSV</button>
+            </div>
+          </div>
+          <div class="tbl-head" style="margin-top: 0">
+            <div></div>
+            <input
+              class="srch"
+              id="srch"
+              type="text"
+              placeholder="Cari nama, instansi…"
+              oninput="onSearch(this.value)"
+            />
+          </div>
+          <div class="tbl-card">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Nama &amp; Instansi</th>
+                  <th>Jabatan</th>
+                  <th>Keperluan</th>
+                  <th>No. WA</th>
+                  <th>Waktu</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="tamuBody"></tbody>
+            </table>
+            <div class="empty" id="tamuEmpty" style="display: none">
+              <div class="ei">📭</div>
+              <p>Belum ada data tamu.</p>
+            </div>
+            <div class="pager" id="pager"></div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Delete modal -->
+    <div
+      class="modal-bg"
+      id="delModal"
+      onclick="if (event.target === this) closeMdl();"
+    >
+      <div class="modal">
+        <h3>🗑 Hapus Data?</h3>
+        <p>Data tamu ini akan dihapus secara permanen dari database.</p>
+        <div class="modal-acts">
+          <button class="btn-cancel" onclick="closeMdl()">Batal</button
+          ><button class="btn-del" id="btnDel">Hapus</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Clear all modal -->
+    <div
+      class="modal-bg"
+      id="clearModal"
+      onclick="if (event.target === this) closeMdl2();"
+    >
+      <div class="modal">
+        <h3>⚠️ Hapus Semua Data?</h3>
+        <p>
+          Seluruh data akan dihapus permanen. Pastikan sudah simpan .db atau
+          export CSV terlebih dahulu.
+        </p>
+        <div class="modal-acts">
+          <button class="btn-cancel" onclick="closeMdl2()">Batal</button
+          ><button class="btn-del" id="btnClear">Hapus Semua</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast">
+      <span id="tIco"></span><span id="tMsg"></span>
+    </div>
+
+    <script src="libs/sql-wasm.js"></script>
+    <script src="js/db-manager.js"></script>
+    <script src="js/logic_admin.js"></script>
+  </body>
+</html>
